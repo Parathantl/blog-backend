@@ -28,10 +28,19 @@ import { CurrentUserGuard } from 'src/auth/current-user-guard';
 import { Express } from 'express';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { diskStorage } from 'multer';
+import { ConfigService } from '@nestjs/config';
 
 @Controller('post')
 export class PostController {
-  constructor(private readonly postService: PostService) {}
+  constructor(
+    private readonly postService: PostService,
+    private readonly configService: ConfigService,
+  ) {}
+
+  buildFilePath(file: any): string {
+    const appUrl = this.configService.get<string>('APP_URL');
+    return `${appUrl}/post/images/${file.filename}`;
+  }
 
   @Post()
   @UsePipes(ValidationPipe)
@@ -86,7 +95,7 @@ export class PostController {
       throw new BadRequestException('Please upload a file');
     } else {
       const response = {
-        filePath: `http://localhost:3000/${file.filename}`,
+        filePath: this.buildFilePath(file),
       };
       return response;
     }
