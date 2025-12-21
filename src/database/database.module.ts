@@ -11,13 +11,17 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
         const databaseUrl = config.get<string>('DATABASE_URL');
 
         if (databaseUrl) {
-          // Production: Use DATABASE_URL
+          // Check if this is a local Docker/development connection
+          const isLocalDb = databaseUrl.includes('localhost') ||
+                           databaseUrl.includes('@postgres:') ||
+                           databaseUrl.includes('127.0.0.1');
+
           return {
             type: 'postgres',
             url: databaseUrl,
             entities: [__dirname + '/../**/*.entity{.ts,.js}'],
             synchronize: config.get<boolean>('DB_SYNCHRONIZE', false),
-            ssl: {
+            ssl: isLocalDb ? false : {
               rejectUnauthorized: false, // Railway requires this
             },
           };
