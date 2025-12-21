@@ -32,6 +32,7 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
             database: config.get<string>('DB_DATABASE'),
             entities: [__dirname + '/../**/*.entity{.ts,.js}'],
             synchronize: config.get<boolean>('DB_SYNCHRONIZE', false),
+            ssl: false, // Disable SSL for local development
           };
         }
       },
