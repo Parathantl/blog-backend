@@ -15,32 +15,25 @@ import {
   UseGuards,
   UploadedFile,
   BadRequestException,
-  Res,
 } from '@nestjs/common';
 import { PostService } from './post.service';
 import { CreatePostDto } from './dto/create-post.dto';
 import { UpdatePostDto } from './dto/update-post.dto';
-import { Request, Response } from 'express';
+import { Request } from 'express';
 import { User } from 'src/auth/entities/user.entity';
 import { AuthGuard } from '@nestjs/passport';
 // import { CurrentUser } from 'src/auth/user-decorator';
 import { CurrentUserGuard } from 'src/auth/current-user-guard';
 import { Express } from 'express';
 import { FileInterceptor } from '@nestjs/platform-express';
-import { diskStorage } from 'multer';
-import { ConfigService } from '@nestjs/config';
+import { StorageService } from '../storage/storage.service';
 
 @Controller('post')
 export class PostController {
   constructor(
     private readonly postService: PostService,
-    private readonly configService: ConfigService,
+    private readonly storageService: StorageService,
   ) {}
-
-  buildFilePath(file: any): string {
-    const appUrl = this.configService.get<string>('APP_URL');
-    return `${appUrl}/post/images/${file.filename}`;
-  }
 
   @Post()
   @UsePipes(ValidationPipe)
@@ -73,18 +66,14 @@ export class PostController {
   @Post('upload-photo')
   @UseInterceptors(
     FileInterceptor('file', {
-      storage: diskStorage({
-        destination: './uploads',
-        filename: (req, file, cb) => {
-          const filename: string = file.originalname.split('.')[0];
-          const fileExtension = file.originalname.split('.')[1];
-          const newFilename = `${filename}-${Date.now()}.${fileExtension}`;
-          cb(null, newFilename);
-        },
-      }),
       fileFilter: (req, file, cb) => {
         if (!file.originalname.match(/\.(jpg|jpeg|png|gif|webp)$/i)) {
-          return cb(new BadRequestException('Only image files (jpg, jpeg, png, gif, webp) are allowed'), false);
+          return cb(
+            new BadRequestException(
+              'Only image files (jpg, jpeg, png, gif, webp) are allowed',
+            ),
+            false,
+          );
         }
         cb(null, true);
       },
@@ -93,21 +82,29 @@ export class PostController {
       },
     }),
   )
-  uploadPhoto(@UploadedFile() file: Express.Multer.File) {
+  async uploadPhoto(@UploadedFile() file: Express.Multer.File) {
     if (!file) {
       throw new BadRequestException('Please upload a file');
-    } else {
-      const response = {
-        filePath: this.buildFilePath(file),
+    }
+
+    try {
+      // Upload to configured storage provider (Cloudinary, S3, Local, etc.)
+      const uploadResult = await this.storageService.uploadFile(file, 'blog');
+
+      return {
+        filePath: uploadResult.url,
+        publicId: uploadResult.publicId,
+        size: uploadResult.size,
+        format: uploadResult.format,
       };
-      return response;
+    } catch (error) {
+      console.error('Upload error:', error);
+      throw new BadRequestException('Failed to upload file');
     }
   }
 
-  @Get('images/:filename')
-  async getImage(@Param('filename') filename: string, @Res() res: Response) {
-    res.sendFile(filename, { root: './uploads' });
-  }
+  // Note: Images are now served directly from storage provider (Cloudinary, S3, etc.)
+  // No need for local image serving endpoint
 
   @Patch(':slug')
   @UseGuards(AuthGuard('jwt')) // For Guard the routes
