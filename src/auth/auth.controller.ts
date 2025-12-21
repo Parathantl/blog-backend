@@ -22,14 +22,18 @@ export class AuthController {
   async userLogin(@Body() UserLoginDto, @Res() res: Response) {
     const { token, user } = await this.authService.login(UserLoginDto);
 
-    res.cookie('IsAuthenticated', true, {
-      maxAge: 2 * 60 * 60 * 1000,
-      sameSite: 'lax',
-    });
+    // Cookie settings for production (cross-domain)
+    const isProduction = process.env.NODE_ENV === 'production';
+    const cookieOptions = {
+      maxAge: 2 * 60 * 60 * 1000, // 2 hours
+      sameSite: isProduction ? ('none' as const) : ('lax' as const),
+      secure: isProduction, // Required for sameSite: 'none'
+    };
+
+    res.cookie('IsAuthenticated', 'true', cookieOptions);
     res.cookie('Authentication', token, {
+      ...cookieOptions,
       httpOnly: true,
-      maxAge: 2 * 60 * 60 * 1000,
-      sameSite: 'lax',
     });
 
     return res.send({
@@ -51,8 +55,14 @@ export class AuthController {
 
   @Post('logout')
   logout(@Req() req: Request, @Res() res: Response) {
-    res.clearCookie('Authentication');
-    res.clearCookie('IsAuthenticated');
+    const isProduction = process.env.NODE_ENV === 'production';
+    const cookieOptions = {
+      sameSite: isProduction ? ('none' as const) : ('lax' as const),
+      secure: isProduction,
+    };
+
+    res.clearCookie('Authentication', { ...cookieOptions, httpOnly: true });
+    res.clearCookie('IsAuthenticated', cookieOptions);
     return res.status(200).send({
       success: true,
     });
