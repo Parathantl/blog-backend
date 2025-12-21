@@ -30,10 +30,15 @@ export class AuthService {
   ) {
     // Initialize email transporter with timeouts
     this.transporter = nodemailer.createTransport({
-      service: 'gmail',
+      host: 'smtp.gmail.com',
+      port: 587,
+      secure: false, // Use STARTTLS
       auth: {
         user: this.configService.get<string>('EMAIL_USER'),
         pass: this.configService.get<string>('EMAIL_PASSWORD'),
+      },
+      tls: {
+        rejectUnauthorized: false, // Accept self-signed certificates (Railway compatibility)
       },
       // Add timeouts to prevent hanging
       connectionTimeout: 10000, // 10 seconds
