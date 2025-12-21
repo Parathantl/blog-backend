@@ -6,6 +6,8 @@ import { AuthModule } from './auth/auth.module';
 import { CategoryModule } from './category/category.module';
 import { ConfigModule } from '@nestjs/config';
 import { DatabaseModule } from './database/database.module';
+import { PortfolioModule } from './portfolio/portfolio.module';
+import { ContactModule } from './contact/contact.module';
 
 @Module({
   imports: [
@@ -20,6 +22,8 @@ import { DatabaseModule } from './database/database.module';
     PostModule,
     AuthModule,
     CategoryModule,
+    PortfolioModule,
+    ContactModule,
   ],
   controllers: [AppController],
   providers: [AppService],

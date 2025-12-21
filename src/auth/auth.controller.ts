@@ -22,10 +22,14 @@ export class AuthController {
   async userLogin(@Body() UserLoginDto, @Res() res: Response) {
     const { token, user } = await this.authService.login(UserLoginDto);
 
-    res.cookie('IsAuthenticated', true, { maxAge: 2 * 60 * 60 * 1000 });
+    res.cookie('IsAuthenticated', true, {
+      maxAge: 2 * 60 * 60 * 1000,
+      sameSite: 'lax',
+    });
     res.cookie('Authentication', token, {
       httpOnly: true,
       maxAge: 2 * 60 * 60 * 1000,
+      sameSite: 'lax',
     });
 
     return res.send({

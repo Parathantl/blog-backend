@@ -14,6 +14,15 @@ export class Category {
   @Column()
   description: string;
 
+  @Column({ default: 'blog' })
+  type: string;
+
+  @Column({ nullable: true })
+  slug: string;
+
+  @Column({ default: 1 })
+  displayOrder: number;
+
   @OneToMany(() => Post, (post) => post.category)
   post: Post;
 }
