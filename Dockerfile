@@ -34,9 +34,6 @@ COPY --from=builder /app/node_modules ./node_modules
 # Copy built application
 COPY --from=builder /app/dist ./dist
 
-# Copy uploads folder (if needed for local storage)
-COPY --from=builder /app/uploads ./uploads
-
 # Create non-root user
 RUN addgroup -g 1001 -S nodejs && \
     adduser -S nestjs -u 1001 && \
