@@ -1,5 +1,5 @@
 # Base stage with Node.js installed
-FROM node:14-alpine as builder
+FROM node:20-alpine as builder
 
 # Set the working directory
 WORKDIR /usr/src/app
@@ -17,7 +17,7 @@ COPY . .
 RUN npm run build
 
 # Production stage
-FROM node:14-alpine as production
+FROM node:20-alpine as production
 
 # Set environment to production
 ENV NODE_ENV=production
@@ -35,7 +35,7 @@ RUN npm install --only=production
 COPY --from=builder /usr/src/app/dist ./dist
 
 # Expose the port the app runs on
-EXPOSE 3000
+EXPOSE 3001
 
 # Command to run the application
 CMD ["node", "dist/main"]
