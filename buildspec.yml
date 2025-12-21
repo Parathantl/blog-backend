@@ -4,7 +4,6 @@ phases:
   pre_build:
     commands:
       - echo Installing dependencies...
-      - cd blog-backend
       - npm ci --only=production
   build:
     commands:
@@ -17,7 +16,8 @@ phases:
 artifacts:
   files:
     - '**/*'
-  base-directory: blog-backend
   exclude-paths:
     - node_modules/aws-sdk/**
     - .git/**
+    - test/**
+    - coverage/**
