@@ -1,14 +1,20 @@
 version: 0.2
 
 phases:
+  install:
+    runtime-versions:
+      nodejs: 18
   pre_build:
     commands:
       - echo Installing dependencies...
-      - npm ci --only=production
+      - cd blog-backend
+      - npm ci
   build:
     commands:
       - echo Building application...
-      - npm run build
+      - npx nest build
+      - echo Removing dev dependencies...
+      - npm prune --production
   post_build:
     commands:
       - echo Build completed successfully
@@ -16,8 +22,12 @@ phases:
 artifacts:
   files:
     - '**/*'
+  base-directory: blog-backend
   exclude-paths:
     - node_modules/aws-sdk/**
     - .git/**
     - test/**
     - coverage/**
+    - src/**
+    - '*.ts'
+    - tsconfig*.json
