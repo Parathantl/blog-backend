@@ -119,6 +119,11 @@ export class PortfolioController {
     return this.portfolioService.findCurrentExperience();
   }
 
+  @Get('experience/:id')
+  findOneExperience(@Param('id') id: string) {
+    return this.portfolioService.findOneExperience(+id);
+  }
+
   @Patch('experience/:id')
   @UseGuards(AuthGuard('jwt'))
   updateExperience(@Param('id') id: string, @Body() updateExperienceDto: UpdateExperienceDto) {
