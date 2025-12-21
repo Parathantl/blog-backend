@@ -1,0 +1,23 @@
+version: 0.2
+
+phases:
+  pre_build:
+    commands:
+      - echo Installing dependencies...
+      - cd blog-backend
+      - npm ci --only=production
+  build:
+    commands:
+      - echo Building application...
+      - npm run build
+  post_build:
+    commands:
+      - echo Build completed successfully
+
+artifacts:
+  files:
+    - '**/*'
+  base-directory: blog-backend
+  exclude-paths:
+    - node_modules/aws-sdk/**
+    - .git/**
