@@ -131,7 +131,10 @@ export class AuthService {
     await this.passwordResetRepo.save(passwordReset);
 
     // Send reset email asynchronously (don't wait for it)
-    const frontendResetUrl = `${this.configService.get<string>('ALLOWED_ORIGINS')?.split(',')[0]}/reset-password?token=${resetToken}`;
+    const frontendUrl =
+      this.configService.get<string>('FRONTEND_URL') ||
+      this.configService.get<string>('ALLOWED_ORIGINS')?.split(',')[0];
+    const frontendResetUrl = `${frontendUrl}/reset-password?token=${resetToken}`;
 
     // Fire and forget - send email in background
     this.sendResetEmail(user.email, frontendResetUrl).catch((error) => {
