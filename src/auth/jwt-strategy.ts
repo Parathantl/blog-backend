@@ -5,12 +5,16 @@ import { User } from './entities/user.entity';
 import { Repository } from 'typeorm';
 import { Request } from 'express';
 import { UnauthorizedException } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 
 export class JwtStrategy extends PassportStrategy(Strategy) {
-  constructor(@InjectRepository(User) private readonly repo: Repository<User>) {
+  constructor(
+    @InjectRepository(User) private readonly repo: Repository<User>,
+    private configService: ConfigService,
+  ) {
     super({
       ignoreExpiration: false,
-      secretOrKey: 'SECRETKEYYYDVDGGG',
+      secretOrKey: configService.get<string>('JWT_SECRET', 'SECRETKEYYYDVDGGG'),
       jwtFromRequest: ExtractJwt.fromExtractors([
         (request: Request) => {
           return request?.cookies?.Authentication;
