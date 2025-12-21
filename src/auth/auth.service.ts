@@ -28,13 +28,17 @@ export class AuthService {
     private jwtService: JwtService,
     private configService: ConfigService,
   ) {
-    // Initialize email transporter
+    // Initialize email transporter with timeouts
     this.transporter = nodemailer.createTransport({
       service: 'gmail',
       auth: {
         user: this.configService.get<string>('EMAIL_USER'),
         pass: this.configService.get<string>('EMAIL_PASSWORD'),
       },
+      // Add timeouts to prevent hanging
+      connectionTimeout: 10000, // 10 seconds
+      greetingTimeout: 10000, // 10 seconds
+      socketTimeout: 10000, // 10 seconds
     });
   }
 
@@ -126,10 +130,14 @@ export class AuthService {
 
     await this.passwordResetRepo.save(passwordReset);
 
-    // Send reset email
+    // Send reset email asynchronously (don't wait for it)
     const frontendResetUrl = `${this.configService.get<string>('ALLOWED_ORIGINS')?.split(',')[0]}/reset-password?token=${resetToken}`;
 
-    await this.sendResetEmail(user.email, frontendResetUrl);
+    // Fire and forget - send email in background
+    this.sendResetEmail(user.email, frontendResetUrl).catch((error) => {
+      console.error('Failed to send reset email:', error);
+      // Don't throw - we already saved the token, email failure shouldn't block response
+    });
 
     return {
       success: true,
