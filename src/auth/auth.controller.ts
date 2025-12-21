@@ -9,7 +9,8 @@ import {
 } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { Request, Response } from 'express';
-import { CreateUserDto } from './dto/create-auth.dto';
+import { ForgotPasswordDto } from './dto/forgot-password.dto';
+import { ResetPasswordDto } from './dto/reset-password.dto';
 import { CurrentUser } from './user-decorator';
 import { User } from './entities/user.entity';
 import { CurrentUserGuard } from './current-user-guard';
@@ -42,9 +43,21 @@ export class AuthController {
     });
   }
 
-  @Post('register')
-  registerUser(@Body() body: CreateUserDto) {
-    return this.authService.register(body);
+  // Registration endpoint disabled for security
+  // To enable registration, uncomment this endpoint or create an admin-only user creation endpoint
+  // @Post('register')
+  // registerUser(@Body() body: CreateUserDto) {
+  //   return this.authService.register(body);
+  // }
+
+  @Post('forgot-password')
+  async forgotPassword(@Body() forgotPasswordDto: ForgotPasswordDto) {
+    return this.authService.forgotPassword(forgotPasswordDto);
+  }
+
+  @Post('reset-password')
+  async resetPassword(@Body() resetPasswordDto: ResetPasswordDto) {
+    return this.authService.resetPassword(resetPasswordDto);
   }
 
   @Get('authstatus')
