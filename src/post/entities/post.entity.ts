@@ -33,7 +33,7 @@ export class Post {
   @Column({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP' })
   modifiedOn: Date;
 
-  @Column()
+  @Column({ nullable: true })
   mainImageUrl: string;
 
   @Column()
