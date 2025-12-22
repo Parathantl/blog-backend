@@ -39,49 +39,72 @@ export class LocalStorageProvider implements IStorageProvider {
     let optimizedBuffer: Buffer;
     let finalSize: number;
 
-    try {
-      const image = sharp(file.buffer);
+    // Skip optimization for small files (< 100KB) or already optimized formats
+    const skipOptimization =
+      file.size < 100 * 1024 || // Files smaller than 100KB
+      fileExt === 'gif'; // GIF animations should not be re-compressed
 
-      // Resize if image is too large (max width: 1920px, maintains aspect ratio)
-      let processedImage = image.resize(1920, null, {
-        withoutEnlargement: true, // Don't enlarge smaller images
-        fit: 'inside',
-      });
-
-      // Compress based on format
-      if (fileExt === 'jpg' || fileExt === 'jpeg') {
-        processedImage = processedImage.jpeg({
-          quality: 85,
-          progressive: true,
-        });
-      } else if (fileExt === 'png') {
-        processedImage = processedImage.png({
-          quality: 85,
-          compressionLevel: 9,
-        });
-      } else if (fileExt === 'webp') {
-        processedImage = processedImage.webp({ quality: 85 });
-      }
-
-      optimizedBuffer = await processedImage.toBuffer();
-      finalSize = optimizedBuffer.length;
-
-      // Write optimized file to disk
-      fs.writeFileSync(filePath, optimizedBuffer);
-
-      // Log compression stats
-      const compressionRatio = ((1 - finalSize / file.size) * 100).toFixed(1);
-      console.log(
-        `📸 Image optimized: ${file.originalname} | Original: ${(file.size / 1024).toFixed(1)}KB → Optimized: ${(finalSize / 1024).toFixed(1)}KB | Saved: ${compressionRatio}%`,
-      );
-    } catch (error) {
-      // If sharp fails (non-image file), save original
-      console.warn(
-        'Sharp processing failed, saving original file:',
-        error.message,
-      );
+    if (skipOptimization) {
+      // Save original file without processing
       fs.writeFileSync(filePath, file.buffer);
       finalSize = file.size;
+      console.log(
+        `📸 Image saved (no optimization): ${file.originalname} | Size: ${(finalSize / 1024).toFixed(1)}KB`,
+      );
+    } else {
+      try {
+        const image = sharp(file.buffer);
+
+        // Resize if image is too large (max width: 1920px, maintains aspect ratio)
+        let processedImage = image.resize(1920, null, {
+          withoutEnlargement: true, // Don't enlarge smaller images
+          fit: 'inside',
+        });
+
+        // Compress based on format
+        if (fileExt === 'jpg' || fileExt === 'jpeg') {
+          processedImage = processedImage.jpeg({
+            quality: 85,
+            progressive: true,
+          });
+        } else if (fileExt === 'png') {
+          processedImage = processedImage.png({
+            quality: 85,
+            compressionLevel: 9,
+          });
+        } else if (fileExt === 'webp') {
+          processedImage = processedImage.webp({ quality: 85 });
+        }
+
+        optimizedBuffer = await processedImage.toBuffer();
+        finalSize = optimizedBuffer.length;
+
+        // Only save optimized version if it's actually smaller
+        if (finalSize < file.size) {
+          fs.writeFileSync(filePath, optimizedBuffer);
+          const compressionRatio = ((1 - finalSize / file.size) * 100).toFixed(
+            1,
+          );
+          console.log(
+            `📸 Image optimized: ${file.originalname} | Original: ${(file.size / 1024).toFixed(1)}KB → Optimized: ${(finalSize / 1024).toFixed(1)}KB | Saved: ${compressionRatio}%`,
+          );
+        } else {
+          // Optimized version is larger, use original
+          fs.writeFileSync(filePath, file.buffer);
+          finalSize = file.size;
+          console.log(
+            `📸 Image saved (original smaller): ${file.originalname} | Size: ${(finalSize / 1024).toFixed(1)}KB`,
+          );
+        }
+      } catch (error) {
+        // If sharp fails (non-image file), save original
+        console.warn(
+          'Sharp processing failed, saving original file:',
+          error.message,
+        );
+        fs.writeFileSync(filePath, file.buffer);
+        finalSize = file.size;
+      }
     }
 
     const appUrl = this.configService.get<string>(
