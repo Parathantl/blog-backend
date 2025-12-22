@@ -24,9 +24,9 @@ export class CategoryService {
     });
   }
 
-  async findByType(type: string) {
+  async findByMasterCategory(masterCategoryId: number) {
     return await this.repo.find({
-      where: { type },
+      where: { masterCategoryId },
       order: { displayOrder: 'ASC' },
     });
   }
@@ -64,7 +64,7 @@ export class CategoryService {
   async reorderCategories(categories: { id: number; displayOrder: number }[]) {
     // Update all categories in parallel
     const promises = categories.map(({ id, displayOrder }) =>
-      this.repo.update(id, { displayOrder })
+      this.repo.update(id, { displayOrder }),
     );
     await Promise.all(promises);
     return { success: true };

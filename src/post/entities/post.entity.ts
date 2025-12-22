@@ -5,6 +5,8 @@ import {
   Column,
   Entity,
   JoinColumn,
+  JoinTable,
+  ManyToMany,
   ManyToOne,
   PrimaryGeneratedColumn,
 } from 'typeorm';
@@ -15,16 +17,22 @@ import { Exclude } from 'class-transformer';
 export class Post {
   @PrimaryGeneratedColumn()
   id: number;
+
   @Column()
   title: string;
+
   @Column()
   content: string;
+
   @Column()
   slug: string;
+
   @Column({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP' })
   createdOn: Date;
+
   @Column({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP' })
   modifiedOn: Date;
+
   @Column()
   mainImageUrl: string;
 
@@ -32,14 +40,8 @@ export class Post {
   @Exclude()
   userId: number;
 
-  @Column({
-    default: 3,
-  })
-  @Exclude()
-  categoryId: number;
-
   @ManyToOne(() => User, (user) => user.posts, {
-    eager: true, // will fetch by default without extra joins, eager can only be used to one side
+    eager: true,
   })
   @JoinColumn({
     name: 'userId',
@@ -47,14 +49,21 @@ export class Post {
   })
   user: User;
 
-  @ManyToOne(() => Category, (category) => category.post, {
+  @ManyToMany(() => Category, (category) => category.posts, {
     eager: true,
   })
-  @JoinColumn({
-    name: 'categoryId',
-    referencedColumnName: 'id',
+  @JoinTable({
+    name: 'post_categories',
+    joinColumn: {
+      name: 'postId',
+      referencedColumnName: 'id',
+    },
+    inverseJoinColumn: {
+      name: 'categoryId',
+      referencedColumnName: 'id',
+    },
   })
-  category: Category;
+  categories: Category[];
 
   @BeforeInsert()
   slugifyPost() {

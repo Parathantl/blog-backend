@@ -25,9 +25,9 @@ export class CategoryController {
     return this.categoryService.findAll();
   }
 
-  @Get('type/:type')
-  findByType(@Param('type') type: string) {
-    return this.categoryService.findByType(type);
+  @Get('master-category/:masterCategoryId')
+  findByMasterCategory(@Param('masterCategoryId') masterCategoryId: string) {
+    return this.categoryService.findByMasterCategory(+masterCategoryId);
   }
 
   @Get('slug/:slug')
@@ -41,12 +41,17 @@ export class CategoryController {
   }
 
   @Patch('reorder')
-  reorder(@Body() reorderDto: { categories: { id: number; displayOrder: number }[] }) {
+  reorder(
+    @Body() reorderDto: { categories: { id: number; displayOrder: number }[] },
+  ) {
     return this.categoryService.reorderCategories(reorderDto.categories);
   }
 
   @Patch(':id')
-  update(@Param('id') id: string, @Body() updateCategoryDto: UpdateCategoryDto) {
+  update(
+    @Param('id') id: string,
+    @Body() updateCategoryDto: UpdateCategoryDto,
+  ) {
     return this.categoryService.update(+id, updateCategoryDto);
   }
 

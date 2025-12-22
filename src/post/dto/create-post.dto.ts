@@ -1,22 +1,26 @@
-import { IsNotEmpty, IsNumber, IsOptional, IsString } from 'class-validator';
-import { Category } from 'src/category/entities/category.entity';
+import {
+  IsNotEmpty,
+  IsArray,
+  IsOptional,
+  IsString,
+  IsNumber,
+} from 'class-validator';
 
 export class CreatePostDto {
   @IsNotEmpty({ message: 'Title is mandatory' })
   @IsString()
   title: string;
+
   @IsNotEmpty()
   @IsString()
   content: string;
 
-  @IsNumber()
+  @IsArray()
+  @IsNumber({}, { each: true })
   @IsOptional()
-  categoryId: number;
+  categoryIds: number[];
 
   @IsOptional()
   @IsString()
   mainImageUrl: string;
-
-  @IsOptional()
-  category: Category;
 }

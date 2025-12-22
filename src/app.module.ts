@@ -4,6 +4,7 @@ import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { AuthModule } from './auth/auth.module';
 import { CategoryModule } from './category/category.module';
+import { MasterCategoryModule } from './master-category/master-category.module';
 import { ConfigModule } from '@nestjs/config';
 import { DatabaseModule } from './database/database.module';
 import { PortfolioModule } from './portfolio/portfolio.module';
@@ -22,6 +23,7 @@ import { ContactModule } from './contact/contact.module';
     PostModule,
     AuthModule,
     CategoryModule,
+    MasterCategoryModule,
     PortfolioModule,
     ContactModule,
   ],

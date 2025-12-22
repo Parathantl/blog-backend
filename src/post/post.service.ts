@@ -3,21 +3,46 @@ import { CreatePostDto } from './dto/create-post.dto';
 import { UpdatePostDto } from './dto/update-post.dto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Post } from './entities/post.entity';
-import { Repository } from 'typeorm';
+import { Category } from 'src/category/entities/category.entity';
+import { Repository, In } from 'typeorm';
 import { User } from 'src/auth/entities/user.entity';
 
 @Injectable()
 export class PostService {
   constructor(
     @InjectRepository(Post) private readonly repo: Repository<Post>,
+    @InjectRepository(Category)
+    private readonly categoryRepo: Repository<Category>,
   ) {}
 
   async create(createPostDto: CreatePostDto, user: User) {
     const post = new Post();
     post.userId = user.id;
-    Object.assign(post, createPostDto);
 
-    this.repo.create(post);
+    const { categoryIds, ...postData } = createPostDto;
+    Object.assign(post, postData);
+
+    if (categoryIds && categoryIds.length > 0) {
+      const categories = await this.categoryRepo.find({
+        where: { id: In(categoryIds) },
+      });
+
+      if (categories.length === 0) {
+        throw new BadRequestException('No valid categories found');
+      }
+
+      // Validate all categories belong to the same master category
+      const masterCategoryIds = [
+        ...new Set(categories.map((cat) => cat.masterCategoryId)),
+      ];
+      if (masterCategoryIds.length > 1) {
+        throw new BadRequestException(
+          'All categories must belong to the same master category',
+        );
+      }
+
+      post.categories = categories;
+    }
 
     return await this.repo.save(post);
   }
@@ -25,7 +50,8 @@ export class PostService {
   async findAll(query?: string) {
     const myQuery = this.repo
       .createQueryBuilder('post')
-      .leftJoinAndSelect('post.category', 'category')
+      .leftJoinAndSelect('post.categories', 'category')
+      .leftJoinAndSelect('category.masterCategory', 'masterCategory')
       .leftJoinAndSelect('post.user', 'user');
 
     // check if query is present or not
@@ -47,6 +73,13 @@ export class PostService {
       // check if category is present, show only selected category items
       if (queryKeys.includes('category')) {
         myQuery.andWhere('category.title = :cat', { cat: query['category'] });
+      }
+
+      // Filter by master category
+      if (queryKeys.includes('masterCategory')) {
+        myQuery.andWhere('masterCategory.slug = :masterCat', {
+          masterCat: query['masterCategory'],
+        });
       }
 
       return await myQuery.getMany();
@@ -77,16 +110,42 @@ export class PostService {
   }
 
   async update(slug: string, updatePostDto: UpdatePostDto) {
-    const post = await this.repo.findOne({ where: { slug } });
+    const post = await this.repo.findOne({
+      where: { slug },
+      relations: ['categories'],
+    });
 
     if (!post) {
       throw new BadRequestException('Post not found');
     }
 
     post.modifiedOn = new Date(Date.now());
-    post.category = updatePostDto.category;
 
-    Object.assign(post, updatePostDto);
+    const { categoryIds, ...postData } = updatePostDto as any;
+
+    if (categoryIds && categoryIds.length > 0) {
+      const categories = await this.categoryRepo.find({
+        where: { id: In(categoryIds) },
+      });
+
+      if (categories.length === 0) {
+        throw new BadRequestException('No valid categories found');
+      }
+
+      // Validate all categories belong to the same master category
+      const masterCategoryIds = [
+        ...new Set(categories.map((cat) => cat.masterCategoryId)),
+      ];
+      if (masterCategoryIds.length > 1) {
+        throw new BadRequestException(
+          'All categories must belong to the same master category',
+        );
+      }
+
+      post.categories = categories;
+    }
+
+    Object.assign(post, postData);
     return this.repo.save(post);
   }
 

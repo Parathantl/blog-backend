@@ -9,21 +9,31 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
       useFactory: async (config: ConfigService) => {
         // Check if DATABASE_URL exists (for Railway/production)
         const databaseUrl = config.get<string>('DATABASE_URL');
+        const isProduction = config.get<string>('NODE_ENV') === 'production';
 
         if (databaseUrl) {
           // Check if this is a local Docker/development connection
-          const isLocalDb = databaseUrl.includes('localhost') ||
-                           databaseUrl.includes('@postgres:') ||
-                           databaseUrl.includes('127.0.0.1');
+          const isLocalDb =
+            databaseUrl.includes('localhost') ||
+            databaseUrl.includes('@postgres:') ||
+            databaseUrl.includes('127.0.0.1');
 
           return {
             type: 'postgres',
             url: databaseUrl,
             entities: [__dirname + '/../**/*.entity{.ts,.js}'],
-            synchronize: config.get<boolean>('DB_SYNCHRONIZE', false),
-            ssl: isLocalDb ? false : {
-              rejectUnauthorized: false, // Railway requires this
-            },
+            migrations: [__dirname + '/migrations/*{.ts,.js}'],
+            // IMPORTANT: Only use synchronize in development, NEVER in production
+            synchronize: isProduction
+              ? false
+              : config.get<boolean>('DB_SYNCHRONIZE', false),
+            migrationsRun: isProduction, // Auto-run migrations in production
+            ssl: isLocalDb
+              ? false
+              : {
+                  rejectUnauthorized: false, // Railway requires this
+                },
+            logging: !isProduction,
           };
         } else {
           // Development: Use individual connection parameters
@@ -35,8 +45,14 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
             password: config.get<string>('DB_PASSWORD'),
             database: config.get<string>('DB_DATABASE'),
             entities: [__dirname + '/../**/*.entity{.ts,.js}'],
-            synchronize: config.get<boolean>('DB_SYNCHRONIZE', false),
+            migrations: [__dirname + '/migrations/*{.ts,.js}'],
+            // IMPORTANT: Only use synchronize in development, NEVER in production
+            synchronize: isProduction
+              ? false
+              : config.get<boolean>('DB_SYNCHRONIZE', false),
+            migrationsRun: isProduction, // Auto-run migrations in production
             ssl: false, // Disable SSL for local development
+            logging: !isProduction,
           };
         }
       },

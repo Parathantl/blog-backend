@@ -11,13 +11,13 @@ export class CreateCategoryDto {
 
   @IsOptional()
   @IsString()
-  type: string;
-
-  @IsOptional()
-  @IsString()
   slug: string;
 
   @IsOptional()
   @IsNumber()
   displayOrder: number;
+
+  @IsNotEmpty()
+  @IsNumber()
+  masterCategoryId: number;
 }
