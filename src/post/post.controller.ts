@@ -82,14 +82,21 @@ export class PostController {
       },
     }),
   )
-  async uploadPhoto(@UploadedFile() file: Express.Multer.File) {
+  async uploadPhoto(
+    @UploadedFile() file: Express.Multer.File,
+    @Query('folder') folder?: string,
+  ) {
     if (!file) {
       throw new BadRequestException('Please upload a file');
     }
 
+    // Validate and sanitize folder name
+    const allowedFolders = ['blog', 'posts', 'projects', 'profiles'];
+    const uploadFolder = folder && allowedFolders.includes(folder) ? folder : 'blog';
+
     try {
       // Upload to configured storage provider (Cloudinary, S3, Local, etc.)
-      const uploadResult = await this.storageService.uploadFile(file, 'blog');
+      const uploadResult = await this.storageService.uploadFile(file, uploadFolder);
 
       return {
         filePath: uploadResult.url,
