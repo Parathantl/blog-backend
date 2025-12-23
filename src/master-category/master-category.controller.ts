@@ -7,6 +7,8 @@ import {
   Param,
   Delete,
   UseGuards,
+  UsePipes,
+  ValidationPipe,
 } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 import { MasterCategoryService } from './master-category.service';
@@ -19,6 +21,7 @@ export class MasterCategoryController {
 
   @Post()
   @UseGuards(AuthGuard('jwt'))
+  @UsePipes(new ValidationPipe({ transform: true, whitelist: true }))
   create(@Body() createMasterCategoryDto: CreateMasterCategoryDto) {
     return this.masterCategoryService.create(createMasterCategoryDto);
   }
@@ -40,6 +43,7 @@ export class MasterCategoryController {
 
   @Patch(':id')
   @UseGuards(AuthGuard('jwt'))
+  @UsePipes(new ValidationPipe({ transform: true, whitelist: true }))
   update(
     @Param('id') id: string,
     @Body() updateMasterCategoryDto: UpdateMasterCategoryDto,

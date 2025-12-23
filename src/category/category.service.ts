@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { CreateCategoryDto } from './dto/create-category.dto';
 import { UpdateCategoryDto } from './dto/update-category.dto';
 import { Category } from './entities/category.entity';
@@ -20,6 +20,7 @@ export class CategoryService {
 
   async findAll() {
     return await this.repo.find({
+      relations: ['masterCategory'],
       order: { displayOrder: 'ASC' },
     });
   }
@@ -27,6 +28,7 @@ export class CategoryService {
   async findByMasterCategory(masterCategoryId: number) {
     return await this.repo.find({
       where: { masterCategoryId },
+      relations: ['masterCategory'],
       order: { displayOrder: 'ASC' },
     });
   }
@@ -44,21 +46,37 @@ export class CategoryService {
   }
 
   async update(id: number, updateCategoryDto: UpdateCategoryDto) {
-    const category = await this.findOne(id);
-    if (category) {
-      Object.assign(category, updateCategoryDto);
-      return await this.repo.save(category);
+    const category = await this.repo.findOne({
+      where: { id },
+    });
+
+    if (!category) {
+      throw new NotFoundException(`Category with ID ${id} not found`);
     }
-    return null;
+
+    // Use update() instead of save() to avoid relation conflicts
+    await this.repo.update(id, updateCategoryDto);
+
+    // Reload with relations to get the updated masterCategory
+    const result = await this.repo.findOne({
+      where: { id },
+      relations: ['masterCategory'],
+    });
+
+    return result;
   }
 
   async remove(id: number) {
-    const category = await this.findOne(id);
-    if (category) {
-      await this.repo.remove(category);
-      return { success: true };
+    const category = await this.repo.findOne({
+      where: { id },
+    });
+
+    if (!category) {
+      throw new NotFoundException(`Category with ID ${id} not found`);
     }
-    return { success: false };
+
+    await this.repo.remove(category);
+    return { success: true, message: 'Category deleted successfully' };
   }
 
   async reorderCategories(categories: { id: number; displayOrder: number }[]) {

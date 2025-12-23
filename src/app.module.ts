@@ -9,6 +9,7 @@ import { ConfigModule } from '@nestjs/config';
 import { DatabaseModule } from './database/database.module';
 import { PortfolioModule } from './portfolio/portfolio.module';
 import { ContactModule } from './contact/contact.module';
+import { NewsletterModule } from './newsletter/newsletter.module';
 
 @Module({
   imports: [
@@ -26,6 +27,7 @@ import { ContactModule } from './contact/contact.module';
     MasterCategoryModule,
     PortfolioModule,
     ContactModule,
+    NewsletterModule,
   ],
   controllers: [AppController],
   providers: [AppService],

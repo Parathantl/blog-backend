@@ -6,6 +6,8 @@ import {
   Patch,
   Param,
   Delete,
+  UsePipes,
+  ValidationPipe,
 } from '@nestjs/common';
 import { CategoryService } from './category.service';
 import { CreateCategoryDto } from './dto/create-category.dto';
@@ -48,6 +50,7 @@ export class CategoryController {
   }
 
   @Patch(':id')
+  @UsePipes(new ValidationPipe({ transform: true, whitelist: true }))
   update(
     @Param('id') id: string,
     @Body() updateCategoryDto: UpdateCategoryDto,

@@ -1,4 +1,5 @@
 import { IsNotEmpty, IsOptional, IsBoolean, IsNumber } from 'class-validator';
+import { Type } from 'class-transformer';
 
 export class CreateMasterCategoryDto {
   @IsNotEmpty()
@@ -16,5 +17,6 @@ export class CreateMasterCategoryDto {
 
   @IsOptional()
   @IsNumber()
+  @Type(() => Number)
   displayOrder?: number;
 }
