@@ -98,9 +98,11 @@ export class LocalStorageProvider implements IStorageProvider {
         }
       } catch (error) {
         // If sharp fails (non-image file), save original
+        const errorMessage =
+          error instanceof Error ? error.message : 'Unknown error';
         console.warn(
           'Sharp processing failed, saving original file:',
-          error.message,
+          errorMessage,
         );
         fs.writeFileSync(filePath, file.buffer);
         finalSize = file.size;

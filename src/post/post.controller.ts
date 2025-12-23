@@ -63,6 +63,15 @@ export class PostController {
     return this.postService.findBySlug(slug);
   }
 
+  @Get('/slug/:slug/related')
+  findRelatedPosts(
+    @Param('slug') slug: string,
+    @Query('limit') limit?: string,
+  ) {
+    const limitNum = limit ? parseInt(limit, 10) : 4;
+    return this.postService.findRelatedPosts(slug, limitNum);
+  }
+
   @Post('upload-photo')
   @UseInterceptors(
     FileInterceptor('file', {
@@ -92,11 +101,15 @@ export class PostController {
 
     // Validate and sanitize folder name
     const allowedFolders = ['blog', 'posts', 'projects', 'profiles'];
-    const uploadFolder = folder && allowedFolders.includes(folder) ? folder : 'blog';
+    const uploadFolder =
+      folder && allowedFolders.includes(folder) ? folder : 'blog';
 
     try {
       // Upload to configured storage provider (Cloudinary, S3, Local, etc.)
-      const uploadResult = await this.storageService.uploadFile(file, uploadFolder);
+      const uploadResult = await this.storageService.uploadFile(
+        file,
+        uploadFolder,
+      );
 
       return {
         filePath: uploadResult.url,

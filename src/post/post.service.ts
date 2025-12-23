@@ -102,11 +102,76 @@ export class PostService {
 
   async findBySlug(slug: string) {
     try {
-      const post = await this.repo.findOneOrFail({ where: { slug } });
+      const post = await this.repo.findOneOrFail({
+        where: { slug },
+        relations: ['categories', 'categories.masterCategory', 'user'],
+      });
       return post;
     } catch (err) {
       throw new BadRequestException(`Post with slug ${slug} not found`);
     }
+  }
+
+  async findRelatedPosts(slug: string, limit: number = 4): Promise<Post[]> {
+    // Get the current post with its categories
+    const currentPost = await this.repo.findOne({
+      where: { slug },
+      relations: ['categories', 'categories.masterCategory'],
+    });
+
+    if (!currentPost) {
+      throw new BadRequestException('Post not found');
+    }
+
+    // Handle posts with no categories - return recent posts instead
+    if (!currentPost.categories || currentPost.categories.length === 0) {
+      return await this.repo
+        .createQueryBuilder('post')
+        .leftJoinAndSelect('post.categories', 'category')
+        .leftJoinAndSelect('category.masterCategory', 'masterCategory')
+        .leftJoinAndSelect('post.user', 'user')
+        .where('post.id != :currentPostId', { currentPostId: currentPost.id })
+        .orderBy('post.createdOn', 'DESC')
+        .limit(limit)
+        .getMany();
+    }
+
+    // Get category IDs and master category IDs
+    const categoryIds = currentPost.categories.map((cat) => cat.id);
+    const masterCategoryIds = [
+      ...new Set(
+        currentPost.categories
+          .map((cat) => cat.masterCategoryId)
+          .filter((id): id is number => id !== null && id !== undefined),
+      ),
+    ];
+
+    // Build query for related posts
+    const queryBuilder = this.repo
+      .createQueryBuilder('post')
+      .leftJoinAndSelect('post.categories', 'category')
+      .leftJoinAndSelect('category.masterCategory', 'masterCategory')
+      .leftJoinAndSelect('post.user', 'user')
+      .where('post.id != :currentPostId', { currentPostId: currentPost.id });
+
+    // Add category/master category filter if we have any
+    if (categoryIds.length > 0 || masterCategoryIds.length > 0) {
+      queryBuilder.andWhere(
+        '(category.id IN (:...categoryIds) OR category.masterCategoryId IN (:...masterCategoryIds))',
+        {
+          categoryIds: categoryIds.length > 0 ? categoryIds : [0],
+          masterCategoryIds:
+            masterCategoryIds.length > 0 ? masterCategoryIds : [0],
+        },
+      );
+    }
+
+    const relatedPosts = await queryBuilder
+      .orderBy('RANDOM()') // PostgreSQL random function
+      .limit(limit)
+      .getMany();
+
+    return relatedPosts;
   }
 
   async update(slug: string, updatePostDto: UpdatePostDto) {
