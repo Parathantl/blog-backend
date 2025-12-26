@@ -19,4 +19,34 @@ export interface IEmailService {
     categories: string[],
     userName?: string,
   ): Promise<void>;
+
+  // Newsletter-specific methods
+  sendNewsletterVerificationEmail(
+    email: string,
+    verificationUrl: string,
+    preferencesUrl: string,
+    categories: Array<{ name: string; description?: string }>,
+  ): Promise<void>;
+
+  sendNewsletterWelcomeEmail(
+    email: string,
+    preferencesUrl: string,
+    unsubscribeUrl: string,
+    categories: Array<{ name: string }>,
+  ): Promise<void>;
+
+  sendNewsletterPreferencesUpdatedEmail(
+    email: string,
+    preferencesUrl: string,
+    unsubscribeUrl: string,
+    categories: Array<{ name: string }>,
+  ): Promise<void>;
+
+  sendNewsletter(
+    email: string,
+    subject: string,
+    htmlContent: string,
+    preferencesUrl: string,
+    unsubscribeUrl: string,
+  ): Promise<void>;
 }

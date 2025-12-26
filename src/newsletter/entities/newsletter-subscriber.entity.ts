@@ -1,14 +1,13 @@
-import { IsEmail, IsNotEmpty } from 'class-validator';
-import { MasterCategory } from 'src/master-category/entities/master-category.entity';
 import {
+  Entity,
+  PrimaryGeneratedColumn,
   Column,
   CreateDateColumn,
-  Entity,
-  JoinTable,
-  ManyToMany,
-  PrimaryGeneratedColumn,
   UpdateDateColumn,
+  ManyToMany,
+  JoinTable,
 } from 'typeorm';
+import { MasterCategory } from '../../master-category/entities/master-category.entity';
 
 @Entity('newsletter_subscribers')
 export class NewsletterSubscriber {
@@ -16,42 +15,37 @@ export class NewsletterSubscriber {
   id: number;
 
   @Column({ unique: true })
-  @IsEmail()
-  @IsNotEmpty()
   email: string;
 
-  @Column({ default: false })
+  @Column({ unique: true, name: 'preference_token' })
+  preferenceToken: string;
+
+  @Column({ default: false, name: 'is_verified' })
   isVerified: boolean;
 
-  @Column({ nullable: true })
+  @Column({ nullable: true, name: 'verification_token' })
   verificationToken: string;
 
-  @Column({ nullable: true })
-  verificationTokenExpiry: Date;
+  @Column({ nullable: true, name: 'verification_expires_at' })
+  verificationExpiresAt: Date;
 
-  @Column({ nullable: true })
-  verifiedAt: Date;
-
-  @Column({ default: false })
-  isActive: boolean;
-
-  @CreateDateColumn()
-  subscribedAt: Date;
-
-  @UpdateDateColumn()
-  updatedAt: Date;
-
-  @ManyToMany(() => MasterCategory, (masterCategory) => masterCategory.id, {
-    cascade: true,
-    eager: true,
-  })
+  @ManyToMany(() => MasterCategory, { eager: true })
   @JoinTable({
-    name: 'subscriber_master_categories',
+    name: 'newsletter_subscriber_categories',
     joinColumn: { name: 'subscriber_id', referencedColumnName: 'id' },
     inverseJoinColumn: {
       name: 'master_category_id',
       referencedColumnName: 'id',
     },
   })
-  masterCategories: MasterCategory[];
+  subscribedCategories: MasterCategory[];
+
+  @Column({ nullable: true, name: 'unsubscribed_at' })
+  unsubscribedAt: Date;
+
+  @CreateDateColumn({ name: 'created_at' })
+  createdAt: Date;
+
+  @UpdateDateColumn({ name: 'updated_at' })
+  updatedAt: Date;
 }

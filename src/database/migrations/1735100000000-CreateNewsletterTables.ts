@@ -9,42 +9,42 @@ export class CreateNewsletterTables1735100000000 implements MigrationInterface {
       CREATE TABLE "newsletter_subscribers" (
         "id" SERIAL NOT NULL,
         "email" character varying NOT NULL,
-        "isVerified" boolean NOT NULL DEFAULT false,
-        "verificationToken" character varying,
-        "verificationTokenExpiry" TIMESTAMP,
-        "verifiedAt" TIMESTAMP,
-        "isActive" boolean NOT NULL DEFAULT false,
-        "subscribedAt" TIMESTAMP NOT NULL DEFAULT now(),
-        "updatedAt" TIMESTAMP NOT NULL DEFAULT now(),
+        "preference_token" character varying NOT NULL,
+        "is_verified" boolean NOT NULL DEFAULT false,
+        "verification_token" character varying,
+        "verification_expires_at" TIMESTAMP,
+        "created_at" TIMESTAMP NOT NULL DEFAULT now(),
+        "updated_at" TIMESTAMP NOT NULL DEFAULT now(),
         CONSTRAINT "UQ_newsletter_subscribers_email" UNIQUE ("email"),
+        CONSTRAINT "UQ_newsletter_subscribers_preference_token" UNIQUE ("preference_token"),
         CONSTRAINT "PK_newsletter_subscribers" PRIMARY KEY ("id")
       )
     `);
 
-    // Create subscriber_master_categories junction table
+    // Create newsletter_subscriber_categories junction table
     await queryRunner.query(`
-      CREATE TABLE "subscriber_master_categories" (
+      CREATE TABLE "newsletter_subscriber_categories" (
         "subscriber_id" integer NOT NULL,
         "master_category_id" integer NOT NULL,
-        CONSTRAINT "PK_subscriber_master_categories" PRIMARY KEY ("subscriber_id", "master_category_id")
+        CONSTRAINT "PK_newsletter_subscriber_categories" PRIMARY KEY ("subscriber_id", "master_category_id")
       )
     `);
 
-    // Create index on subscriber_master_categories
+    // Create index on newsletter_subscriber_categories
     await queryRunner.query(`
-      CREATE INDEX "IDX_subscriber_master_categories_subscriber"
-      ON "subscriber_master_categories" ("subscriber_id")
+      CREATE INDEX "IDX_newsletter_subscriber_categories_subscriber"
+      ON "newsletter_subscriber_categories" ("subscriber_id")
     `);
 
     await queryRunner.query(`
-      CREATE INDEX "IDX_subscriber_master_categories_master_category"
-      ON "subscriber_master_categories" ("master_category_id")
+      CREATE INDEX "IDX_newsletter_subscriber_categories_master_category"
+      ON "newsletter_subscriber_categories" ("master_category_id")
     `);
 
     // Add foreign key constraints
     await queryRunner.query(`
-      ALTER TABLE "subscriber_master_categories"
-      ADD CONSTRAINT "FK_subscriber_master_categories_subscriber"
+      ALTER TABLE "newsletter_subscriber_categories"
+      ADD CONSTRAINT "FK_newsletter_subscriber_categories_subscriber"
       FOREIGN KEY ("subscriber_id")
       REFERENCES "newsletter_subscribers"("id")
       ON DELETE CASCADE
@@ -52,8 +52,8 @@ export class CreateNewsletterTables1735100000000 implements MigrationInterface {
     `);
 
     await queryRunner.query(`
-      ALTER TABLE "subscriber_master_categories"
-      ADD CONSTRAINT "FK_subscriber_master_categories_master_category"
+      ALTER TABLE "newsletter_subscriber_categories"
+      ADD CONSTRAINT "FK_newsletter_subscriber_categories_master_category"
       FOREIGN KEY ("master_category_id")
       REFERENCES "master_categories"("id")
       ON DELETE CASCADE
@@ -66,44 +66,54 @@ export class CreateNewsletterTables1735100000000 implements MigrationInterface {
       ON "newsletter_subscribers" ("email")
     `);
 
-    // Create index on isActive for filtering active subscribers
+    // Create index on preference_token for faster lookups
     await queryRunner.query(`
-      CREATE INDEX "IDX_newsletter_subscribers_isActive"
-      ON "newsletter_subscribers" ("isActive")
+      CREATE INDEX "IDX_newsletter_subscribers_preference_token"
+      ON "newsletter_subscribers" ("preference_token")
+    `);
+
+    // Create index on verification_token for faster lookups
+    await queryRunner.query(`
+      CREATE INDEX "IDX_newsletter_subscribers_verification_token"
+      ON "newsletter_subscribers" ("verification_token")
     `);
   }
 
   public async down(queryRunner: QueryRunner): Promise<void> {
     // Drop foreign key constraints
     await queryRunner.query(`
-      ALTER TABLE "subscriber_master_categories"
-      DROP CONSTRAINT "FK_subscriber_master_categories_master_category"
+      ALTER TABLE "newsletter_subscriber_categories"
+      DROP CONSTRAINT "FK_newsletter_subscriber_categories_master_category"
     `);
 
     await queryRunner.query(`
-      ALTER TABLE "subscriber_master_categories"
-      DROP CONSTRAINT "FK_subscriber_master_categories_subscriber"
+      ALTER TABLE "newsletter_subscriber_categories"
+      DROP CONSTRAINT "FK_newsletter_subscriber_categories_subscriber"
     `);
 
     // Drop indexes
     await queryRunner.query(`
-      DROP INDEX "IDX_subscriber_master_categories_master_category"
+      DROP INDEX "IDX_newsletter_subscribers_verification_token"
     `);
 
     await queryRunner.query(`
-      DROP INDEX "IDX_subscriber_master_categories_subscriber"
-    `);
-
-    await queryRunner.query(`
-      DROP INDEX "IDX_newsletter_subscribers_isActive"
+      DROP INDEX "IDX_newsletter_subscribers_preference_token"
     `);
 
     await queryRunner.query(`
       DROP INDEX "IDX_newsletter_subscribers_email"
     `);
 
+    await queryRunner.query(`
+      DROP INDEX "IDX_newsletter_subscriber_categories_master_category"
+    `);
+
+    await queryRunner.query(`
+      DROP INDEX "IDX_newsletter_subscriber_categories_subscriber"
+    `);
+
     // Drop tables
-    await queryRunner.query(`DROP TABLE "subscriber_master_categories"`);
+    await queryRunner.query(`DROP TABLE "newsletter_subscriber_categories"`);
     await queryRunner.query(`DROP TABLE "newsletter_subscribers"`);
   }
 }

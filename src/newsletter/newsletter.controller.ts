@@ -1,24 +1,25 @@
 import {
   Controller,
   Post,
-  Body,
   Get,
+  Put,
+  Delete,
+  Body,
   Param,
-  Patch,
-  Query,
   UsePipes,
   ValidationPipe,
   UseGuards,
 } from '@nestjs/common';
 import { NewsletterService } from './newsletter.service';
 import { SubscribeDto } from './dto/subscribe.dto';
-import { UnsubscribeDto } from './dto/unsubscribe.dto';
-import { UpdateSubscriptionDto } from './dto/update-subscription.dto';
+import { UpdatePreferencesDto } from './dto/update-preferences.dto';
 import { AuthGuard } from '@nestjs/passport';
 
 @Controller('newsletter')
 export class NewsletterController {
   constructor(private readonly newsletterService: NewsletterService) {}
+
+  // Public endpoints
 
   @Post('subscribe')
   @UsePipes(ValidationPipe)
@@ -26,29 +27,41 @@ export class NewsletterController {
     return this.newsletterService.subscribe(subscribeDto);
   }
 
-  @Get('verify')
-  verifySubscription(@Query('token') token: string) {
-    return this.newsletterService.verifySubscription(token);
+  @Get('verify/:verificationToken')
+  verify(@Param('verificationToken') verificationToken: string) {
+    return this.newsletterService.verify(verificationToken);
   }
 
-  @Post('unsubscribe')
+  @Get('preferences/:preferenceToken')
+  getPreferences(@Param('preferenceToken') preferenceToken: string) {
+    return this.newsletterService.getPreferences(preferenceToken);
+  }
+
+  @Put('preferences/:preferenceToken')
   @UsePipes(ValidationPipe)
-  unsubscribe(@Body() unsubscribeDto: UnsubscribeDto) {
-    return this.newsletterService.unsubscribe(unsubscribeDto);
+  updatePreferences(
+    @Param('preferenceToken') preferenceToken: string,
+    @Body() updatePreferencesDto: UpdatePreferencesDto,
+  ) {
+    return this.newsletterService.updatePreferences(
+      preferenceToken,
+      updatePreferencesDto,
+    );
   }
 
-  @Patch('update')
-  @UsePipes(ValidationPipe)
-  updateSubscription(@Body() updateSubscriptionDto: UpdateSubscriptionDto) {
-    return this.newsletterService.updateSubscription(updateSubscriptionDto);
-  }
-
-  @Get('subscriber/:email')
-  getSubscriber(@Param('email') email: string) {
-    return this.newsletterService.getSubscriber(email);
+  @Delete('unsubscribe/:preferenceToken')
+  unsubscribe(@Param('preferenceToken') preferenceToken: string) {
+    return this.newsletterService.unsubscribe(preferenceToken);
   }
 
   // Admin endpoints - protected with JWT auth
+
+  @Get('stats')
+  @UseGuards(AuthGuard('jwt'))
+  getSubscriberStats() {
+    return this.newsletterService.getSubscriberStats();
+  }
+
   @Get('subscribers')
   @UseGuards(AuthGuard('jwt'))
   getAllSubscribers() {
@@ -58,6 +71,6 @@ export class NewsletterController {
   @Get('subscribers/category/:id')
   @UseGuards(AuthGuard('jwt'))
   getSubscribersByCategory(@Param('id') id: string) {
-    return this.newsletterService.getSubscribersByMasterCategory(+id);
+    return this.newsletterService.getSubscribersByCategory(+id);
   }
 }
