@@ -82,8 +82,15 @@ export class PostService {
         });
       }
 
+      // Add default ordering by createdOn (newest first) if no sort specified
+      if (!queryKeys.includes('sort')) {
+        myQuery.orderBy('post.createdOn', 'DESC');
+      }
+
       return await myQuery.getMany();
     } else {
+      // Add default ordering by createdOn (newest first)
+      myQuery.orderBy('post.createdOn', 'DESC');
       return await myQuery.getMany();
     }
   }
